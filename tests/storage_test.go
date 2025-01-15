@@ -2,12 +2,12 @@ package tests
 
 import (
 	"errors"
-	"gRPCServer/internal/sevice"
+	"gRPCServer/internal/service"
 	"testing"
 )
 
 func TestPut(t *testing.T) {
-	storage := sevice.NewStorage()
+	storage := service.NewStorage()
 	if err := storage.Put("test", "test"); err != nil {
 		t.Error(err)
 	}
@@ -21,7 +21,7 @@ func TestPut(t *testing.T) {
 
 func TestGet(t *testing.T) {
 
-	storage := sevice.NewStorage()
+	storage := service.NewStorage()
 	_ = storage.Put("test", "test")
 	_ = storage.Put("test", "test")
 	_ = storage.Put("2", "1")
@@ -42,13 +42,13 @@ func TestGet(t *testing.T) {
 		t.Error(val)
 	}
 	_ = storage.Delete("test")
-	if _, err := storage.Get("test"); !errors.Is(err, sevice.ErrorNoSuchKey) {
+	if _, err := storage.Get("test"); !errors.Is(err, service.ErrorNoSuchKey) {
 		t.Error(err)
 	}
 }
 
 func TestDelete(t *testing.T) {
-	storage := sevice.NewStorage()
+	storage := service.NewStorage()
 	_ = storage.Put("test", "test")
 	_ = storage.Put("test", "test")
 	_ = storage.Put("2", "1")

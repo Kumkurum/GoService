@@ -2,7 +2,8 @@ package main
 
 import (
 	"errors"
-	"gRPCServer/internal/sevice"
+	"fmt"
+	"gRPCServer/internal/service"
 	"github.com/gorilla/mux"
 	"io"
 	"log"
@@ -41,7 +42,7 @@ func keyValueGetHandler(w http.ResponseWriter, r *http.Request) {
 	key := vars["key"]
 	value, err := storage.Get(key)
 	// Получить значение для данного ключа
-	if errors.Is(err, sevice.ErrorNoSuchKey) {
+	if errors.Is(err, service.ErrorNoSuchKey) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
@@ -53,8 +54,35 @@ func keyValueGetHandler(w http.ResponseWriter, r *http.Request) {
 	// Записать значение в ответ
 }
 
-var storage sevice.Storage = sevice.NewStorage()
+var (
+	storage service.Storage = service.NewStorage()
+	logger  service.TransactionLogger
+)
 
+func initializeTransactionLog() error {
+	var err error
+	logger, err = service.NewFileTransactionLogger("transaction.log")
+	if err != nil {
+		return fmt.Errorf("failed to create event logger: %w", err)
+	}
+	events, errorsLog := logger.ReadEvents()
+	e, ok := service.Event{}, true
+
+	for ok && err == nil {
+		select {
+		case err, ok = <-errorsLog:
+		case e, ok = <-events:
+			switch e.EventType {
+			case service.EventDelete:
+				err = storage.Delete(e.Key)
+			case service.EventPut:
+				err = storage.Put(e.Key, string(e.Value))
+			}
+		}
+	}
+	logger.Run()
+	return err
+}
 func main() {
 	/*port := ":8080"
 	fmt.Println("Hello World")
@@ -67,6 +95,10 @@ func main() {
 	if err := server.Serve(l); err != nil {
 		fmt.Printf("failed to serve: %v", err)
 	}*/
+	err := initializeTransactionLog()
+	if err != nil {
+		return
+	}
 	r := mux.NewRouter()
 	// Зарегистрировать keyValuePutHandler как обработчик HTTP-запросов PUT,
 	// в которых указан путь "/v1/{key}"
