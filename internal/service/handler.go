@@ -1,7 +1,11 @@
 package service
 
-import "net/http"
+import (
+	"net/http"
+)
 
-func helloGoHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello World!"))
+type Handler interface {
+	Put(w http.ResponseWriter, r *http.Request)
+	Get(w http.ResponseWriter, r *http.Request)
+	Delete(w http.ResponseWriter, r *http.Request)
 }

@@ -14,7 +14,7 @@ type FileTransactionLogger struct {
 }
 
 func NewFileTransactionLogger(filename string) (TransactionLogger, error) {
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0755)
 	if err != nil {
 		return nil, fmt.Errorf("error opening file %w", err)
 	}
@@ -27,7 +27,7 @@ func (f *FileTransactionLogger) WritePut(key, value string) {
 func (f *FileTransactionLogger) WriteDelete(key string) {
 	f.events <- Event{EventType: EventDelete, Key: key}
 }
-func (f *FileTransactionLogger) Error(err error) <-chan error {
+func (f *FileTransactionLogger) Error() <-chan error {
 	return f.errors
 }
 
@@ -59,6 +59,7 @@ func (f *FileTransactionLogger) ReadEvents() (<-chan Event, <-chan error) {
 		defer close(outEvents)
 		defer close(outErrors)
 		for scanner.Scan() {
+
 			line := scanner.Text()
 			if _, err := fmt.Sscanf(line, "%d\t%d\t%s\t%s",
 				&e.Sequence, &e.EventType, &e.Key, &e.Value); err != nil {
@@ -78,4 +79,25 @@ func (f *FileTransactionLogger) ReadEvents() (<-chan Event, <-chan error) {
 		}
 	}()
 	return outEvents, outErrors
+}
+
+func (f *FileTransactionLogger) Initialize(storage *Storage) error {
+	var err error
+	events, errorsLog := f.ReadEvents()
+	e, ok := Event{}, true
+
+	for ok && err == nil {
+		select {
+		case err, ok = <-errorsLog:
+		case e, ok = <-events:
+			switch e.EventType {
+			case EventDelete:
+				err = storage.Delete(e.Key)
+			case EventPut:
+				err = storage.Put(e.Key, string(e.Value))
+			}
+		}
+	}
+	f.Run()
+	return err
 }

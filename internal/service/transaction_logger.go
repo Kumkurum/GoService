@@ -5,6 +5,6 @@ type TransactionLogger interface {
 	WritePut(key string, value string)
 	Error() <-chan error
 	ReadEvents() (<-chan Event, <-chan error)
-
+	Initialize(storage *Storage) error
 	Run()
 }
