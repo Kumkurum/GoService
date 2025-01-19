@@ -81,7 +81,6 @@ func (p *PostgresTransactionLogger) Run() {
 	go func() {
 		query := `INSERT INTO transactions (event_type, key, value) VALUES ($1, $2, $3)`
 		for e := range events {
-			fmt.Printf("INSERT")
 			_, err := p.db.Exec(query, e.EventType, e.Key, e.Value)
 			if err != nil {
 				errors <- err

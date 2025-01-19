@@ -23,17 +23,17 @@ var params = service.PostgresDBParams{
 
 func main() {
 	var err error
-	logger, err = service.NewPostgresTransactionLogger(params)
+	//logger, err = service.NewPostgresTransactionLogger(params)
 	if err != nil {
 		fmt.Printf("failed to create event logger: %s", err)
 		return
 	}
-	err = logger.Initialize(storage)
-	defer logger.Close() // Закрытие файла в конце main
-	if err != nil {
-		fmt.Printf("failed to initialize transaction logger: %s", err)
-		return
-	}
+	//err = logger.Initialize(storage)
+	//defer logger.Close() // Закрытие файла в конце main
+	//if err != nil {
+	//	fmt.Printf("failed to initialize transaction logger: %s", err)
+	//	return
+	//}
 	r := mux.NewRouter()
 	handler := service.NewHttpHandler(storage, logger)
 	r.HandleFunc("/v1/{key}", handler.Put).Methods("PUT")

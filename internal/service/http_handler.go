@@ -27,7 +27,7 @@ func (h *HttpHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK) // Все хорошо! Вернуть StatusOK
-	h.logger.WriteDelete(key)
+	//h.logger.WriteDelete(key)
 }
 
 func (h *HttpHandler) Put(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +54,7 @@ func (h *HttpHandler) Put(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated) // Все хорошо! Вернуть StatusCreated
-	h.logger.WritePut(key, string(value))
+	//h.logger.WritePut(key, string(value))
 }
 
 func (h *HttpHandler) Get(w http.ResponseWriter, r *http.Request) {
