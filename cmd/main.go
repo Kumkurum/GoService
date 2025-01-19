@@ -13,23 +13,31 @@ var (
 	logger  service.TransactionLogger
 )
 
+var params = service.PostgresDBParams{
+	Port:     5432,
+	DbName:   "app",
+	Host:     "localhost",
+	User:     "app_user",
+	Password: "123",
+}
+
 func main() {
 	var err error
-	logger, err = service.NewFileTransactionLogger("transaction.log")
+	logger, err = service.NewPostgresTransactionLogger(params)
 	if err != nil {
-		fmt.Errorf("failed to create event logger: %w", err)
+		fmt.Printf("failed to create event logger: %s", err)
 		return
 	}
 	err = logger.Initialize(storage)
+	defer logger.Close() // Закрытие файла в конце main
 	if err != nil {
-		fmt.Errorf("failed to initialize transaction logger: %v\n", err)
+		fmt.Printf("failed to initialize transaction logger: %s", err)
 		return
 	}
 	r := mux.NewRouter()
-
 	handler := service.NewHttpHandler(storage, logger)
 	r.HandleFunc("/v1/{key}", handler.Put).Methods("PUT")
 	r.HandleFunc("/v1/{key}", handler.Get).Methods("GET")
-	r.HandleFunc("/v1/{key}", handler.Delete).Methods("GET")
+	r.HandleFunc("/v1/delete/{key}", handler.Delete).Methods("GET")
 	log.Fatal(http.ListenAndServe(":8080", r))
 }

@@ -6,5 +6,6 @@ type TransactionLogger interface {
 	Error() <-chan error
 	ReadEvents() (<-chan Event, <-chan error)
 	Initialize(storage *Storage) error
+	Close() error
 	Run()
 }

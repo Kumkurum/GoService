@@ -25,7 +25,7 @@ func (f *FileTransactionLogger) WritePut(key, value string) {
 	f.events <- Event{EventType: EventPut, Key: key, Value: value}
 }
 func (f *FileTransactionLogger) WriteDelete(key string) {
-	f.events <- Event{EventType: EventDelete, Key: key}
+	f.events <- Event{EventType: EventDelete, Key: key, Value: "deleted"}
 }
 func (f *FileTransactionLogger) Error() <-chan error {
 	return f.errors
@@ -39,6 +39,7 @@ func (f *FileTransactionLogger) Run() {
 	f.errors = errors
 	go func() {
 		for e := range events {
+			fmt.Printf("f")
 			f.lastSequence++
 			_, err := fmt.Fprintf(f.file,
 				"%d\t%d\t%s\t%s\n",
@@ -61,6 +62,7 @@ func (f *FileTransactionLogger) ReadEvents() (<-chan Event, <-chan error) {
 		for scanner.Scan() {
 
 			line := scanner.Text()
+			fmt.Printf("textLine: %s\n", line)
 			if _, err := fmt.Sscanf(line, "%d\t%d\t%s\t%s",
 				&e.Sequence, &e.EventType, &e.Key, &e.Value); err != nil {
 				outErrors <- fmt.Errorf("input parse error: %w", err)
@@ -71,6 +73,7 @@ func (f *FileTransactionLogger) ReadEvents() (<-chan Event, <-chan error) {
 				return
 			}
 			f.lastSequence = e.Sequence
+			fmt.Printf("value: %s\n", e.Value)
 			outEvents <- e
 		}
 		if err := scanner.Err(); err != nil {
@@ -99,5 +102,12 @@ func (f *FileTransactionLogger) Initialize(storage *Storage) error {
 		}
 	}
 	f.Run()
+	return err
+}
+func (f *FileTransactionLogger) Close() error {
+	err := f.file.Close()
+	if err != nil {
+		return fmt.Errorf("error closing file %w", err)
+	}
 	return err
 }
